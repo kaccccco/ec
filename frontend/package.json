@@ -1,0 +1,38 @@
+{
+  "name": "ecommerce-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:weapp": "taro build --type weapp",
+    "dev:weapp": "taro build --type weapp --watch",
+    "build:h5": "taro build --type h5",
+    "dev:h5": "taro build --type h5 --watch"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.22.15",
+    "@tarojs/components": "3.6.24",
+    "@tarojs/plugin-framework-react": "3.6.24",
+    "@tarojs/plugin-html": "3.6.24",
+    "@tarojs/plugin-platform-h5": "^3.6.24",
+    "@tarojs/react": "3.6.24",
+    "@tarojs/runtime": "3.6.24",
+    "@tarojs/taro": "3.6.24",
+    "@tarojs/taro-h5": "3.6.24",
+    "@types/react": "^18.2.21",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.15",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
+    "@tarojs/cli": "3.6.24",
+    "@tarojs/mini-runner": "3.6.24",
+    "@tarojs/webpack-runner": "3.6.24",
+    "@types/react-redux": "^7.1.27",
+    "@types/webpack-env": "^1.18.0",
+    "babel-preset-taro": "3.6.24",
+    "eslint": "^8.47.0",
+    "eslint-config-taro": "3.6.24",
+    "typescript": "^5.1.6"
+  }
+}

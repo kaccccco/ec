@@ -1,0 +1,32 @@
+.order-page {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  .loading-container, .error-container, .no-order {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 70vh;
+
+    .loading-text, .error-message, .no-order-text {
+      font-size: 32rpx;
+      color: #666;
+      margin-bottom: 40rpx;
+    }
+  }
+
+  .error-message {
+    color: #e53935;
+  }
+
+  .back-button {
+    background-color: #1890ff;
+    color: white;
+    padding: 20rpx 40rpx;
+    border-radius: 8rpx;
+    font-size: 30rpx;
+  }
+}
