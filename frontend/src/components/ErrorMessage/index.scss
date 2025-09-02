@@ -1,0 +1,28 @@
+.error-message-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  text-align: center;
+
+  .error-icon {
+    font-size: 60rpx;
+    margin-bottom: 20rpx;
+  }
+
+  .error-text {
+    font-size: 28rpx;
+    color: #ff4757;
+    margin-bottom: 30rpx;
+    line-height: 1.5;
+  }
+
+  .retry-button {
+    background: #007aff;
+    color: white;
+    border-radius: 8rpx;
+    padding: 12rpx 30rpx;
+    font-size: 28rpx;
+  }
+}

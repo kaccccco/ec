@@ -1,25 +1,15 @@
-server:
-  port: 8080
-
 spring:
   application:
     name: ecommerce-backend
+  
+  # Database Configuration
   datasource:
-    url: jdbc:mysql://localhost:3306/ecommerce?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/ecommerce?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
+    password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
-  redis:
-    host: localhost
-    lettuce:
-      pool:
-        max-active: 100
-        max-idle: 100
-        max-wait: 6000
-        min-idle: 50
-    port: 6379
-    timeout: 5000
-
+    
+  # JPA Configuration
   jpa:
     hibernate:
       ddl-auto: update
@@ -28,33 +18,38 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+        
+  # Redis Configuration
+  redis:
+    host: localhost
+    port: 6379
+    password: 
+    database: 0
+    timeout: 10000
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: -1
+        max-idle: 8
+        min-idle: 0
 
-  cache:
-    type: redis
-    redis:
-      time-to-live: 3600000 # 1小时
-      cache-null-values: false
+# Server Configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /
 
+# Logging Configuration
+logging:
+  level:
+    com.ec: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Swagger Configuration
 springdoc:
   api-docs:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
-    operations-sorter: method
-
-logging:
-  level:
-    com.ec: DEBUG
-    org.springframework.data.redis: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.springframework.cache: DEBUG
-
-# 自定义配置
-app:
-  redis:
-    stock-lock-timeout: 30
-    order-cache-timeout: 24
-    product-cache-timeout: 1
-  cache:
-    products-ttl: 1800 # 30分钟
-    orders-ttl: 86400  # 24小时 

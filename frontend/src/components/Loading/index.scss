@@ -1,0 +1,27 @@
+.loading-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+
+  .loading-spinner {
+    width: 40rpx;
+    height: 40rpx;
+    border: 4rpx solid #f3f3f3;
+    border-top: 4rpx solid #007aff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20rpx;
+  }
+
+  .loading-text {
+    font-size: 28rpx;
+    color: #666;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

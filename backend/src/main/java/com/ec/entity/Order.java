@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -21,38 +23,77 @@ public class Order {
     @EqualsAndHashCode.Include
     private Long id;
     
-    @Column(name = "product_id")
-    private Long productId;
+    @Column(name = "session_id")
+    private String sessionId;
     
-    @Column(name = "product_name")
-    private String productName;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
     
-    private Integer quantity;
+    @Column(name = "total_amount")
+    private BigDecimal totalAmount;
     
-    @Column(name = "total_price")
-    private BigDecimal totalPrice;
-
-    // 自定义构造函数
-    public Order(Long productId, String productName, Integer quantity, BigDecimal totalPrice) {
-        this.productId = productId;
-        this.productName = productName;
-        this.quantity = quantity;
-        this.totalPrice = totalPrice;
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private OrderStatus status = OrderStatus.PENDING;
+    
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     // 业务方法
+    public BigDecimal calculateTotalAmount() {
+        return items.stream()
+                .map(OrderItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
+    public int getTotalItems() {
+        return items.stream()
+                .mapToInt(OrderItem::getQuantity)
+                .sum();
+    }
+    
+    public void addItem(OrderItem item) {
+        item.setOrder(this);
+        items.add(item);
+    }
+    
+    public void removeItem(OrderItem item) {
+        items.remove(item);
+        item.setOrder(null);
+    }
+    
     public boolean isValid() {
-        return productId != null && quantity != null && 
-               quantity > 0 && totalPrice != null && totalPrice.compareTo(BigDecimal.ZERO) > 0;
+        return !items.isEmpty() && totalAmount != null && totalAmount.compareTo(BigDecimal.ZERO) > 0;
     }
-
-    public boolean isForProduct(Long productId) {
-        return this.productId != null && this.productId.equals(productId);
+    
+    public boolean isPending() {
+        return OrderStatus.PENDING.equals(status);
     }
-
-    public BigDecimal getUnitPrice() {
-        return quantity != null && quantity > 0 && totalPrice != null ? 
-               totalPrice.divide(new BigDecimal(quantity), 2, BigDecimal.ROUND_HALF_UP) : 
-               BigDecimal.ZERO;
+    
+    public boolean isCompleted() {
+        return OrderStatus.COMPLETED.equals(status);
+    }
+    
+    public void markAsCompleted() {
+        this.status = OrderStatus.COMPLETED;
+    }
+    
+    public void markAsCancelled() {
+        this.status = OrderStatus.CANCELLED;
     }
 } 
