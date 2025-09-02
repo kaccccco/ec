@@ -150,6 +150,36 @@ public class RedisService {
     }
 
     /**
+     * 设置购物车信息
+     * @param sessionId 会话ID
+     * @param cart 购物车对象
+     */
+    public void setCart(String sessionId, Object cart) {
+        redisTemplate.opsForValue().set("cart:" + sessionId, cart, 2, TimeUnit.HOURS); // 2小时过期
+    }
+
+    /**
+     * 获取购物车信息
+     * @param sessionId 会话ID
+     * @param clazz 购物车类型
+     * @return 购物车对象
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getCart(String sessionId, Class<T> clazz) {
+        return Optional.ofNullable(redisTemplate.opsForValue().get("cart:" + sessionId))
+            .map(value -> (T) value)
+            .orElse(null);
+    }
+
+    /**
+     * 删除购物车
+     * @param sessionId 会话ID
+     */
+    public void deleteCart(String sessionId) {
+        redisTemplate.delete("cart:" + sessionId);
+    }
+
+    /**
      * 删除缓存
      * @param key 缓存键
      */

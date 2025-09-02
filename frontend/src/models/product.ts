@@ -7,12 +7,28 @@ export interface Product {
 }
 
 export interface CartItem {
+    id?: number;
     productId: number;
-    quantity: number;
     productName: string;
-    price: number;
+    productPrice: number;
+    quantity: number;
+    totalPrice: number;
 }
 
-export interface OrderCreateRequest {
+export interface Cart {
+    id?: number;
+    sessionId: string;
     items: CartItem[];
+    totalAmount: number;
+    totalItems: number;
+}
+
+export interface AddToCartRequest {
+    sessionId: string;
+    productId: number;
+    quantity: number;
+}
+
+export interface UpdateCartItemRequest {
+    quantity: number;
 }

@@ -1,6 +1,7 @@
 export default {
     pages: [
         'pages/home/index',
+        'pages/cart/index',
         'pages/order/index'
     ],
     window: {
@@ -20,6 +21,10 @@ export default {
             {
                 pagePath: 'pages/home/index',
                 text: '首页'
+            },
+            {
+                pagePath: 'pages/cart/index',
+                text: '购物车'
             },
             {
                 pagePath: 'pages/order/index',

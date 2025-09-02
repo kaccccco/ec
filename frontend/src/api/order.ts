@@ -1,18 +1,32 @@
 import { request } from '@/utils/request';
-import { Order, OrderCreateRequest } from '@/models/order';
+import { Order, CreateOrderRequest, CreateOrderFromCartRequest } from '@/models/order';
 
-export const createOrder = async (requestData) => {
-  return {
-    id: Math.floor(Math.random() * 10000),
-    items: requestData.items,
-    status: '已创建',
-    total: requestData.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  };
+export const createOrder = async (requestData: CreateOrderRequest): Promise<Order> => {
+    return request<Order>({
+        url: '/orders',
+        method: 'POST',
+        data: requestData,
+    });
+};
+
+export const createOrderFromCart = async (requestData: CreateOrderFromCartRequest): Promise<Order> => {
+    return request<Order>({
+        url: '/orders/from-cart',
+        method: 'POST',
+        data: requestData,
+    });
 };
 
 export const getOrder = async (id: number): Promise<Order> => {
     return request<Order>({
         url: `/orders/${id}`,
+        method: 'GET',
+    });
+};
+
+export const getOrdersBySession = async (sessionId: string): Promise<Order[]> => {
+    return request<Order[]>({
+        url: `/orders/session/${sessionId}`,
         method: 'GET',
     });
 };
