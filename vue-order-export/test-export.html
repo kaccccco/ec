@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导出功能测试</title>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #409EFF;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #66b1ff;
+        }
+        .progress {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 3px;
+            display: none;
+        }
+        .log {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 3px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>订单导出功能测试</h1>
+    
+    <div class="test-section">
+        <h2>测试1：小数据量导出（Excel）</h2>
+        <p>测试100条订单数据导出为Excel文件</p>
+        <button onclick="testSmallExport()">导出100条订单</button>
+        <div id="log1" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试2：大数据量导出（ZIP压缩包）</h2>
+        <p>测试6000条订单数据分批导出并压缩</p>
+        <button onclick="testLargeExport()">导出6000条订单</button>
+        <div id="progress2" class="progress">
+            <div>导出进度: <span id="progress-text">0%</span></div>
+            <div style="background: #ddd; height: 20px; border-radius: 10px;">
+                <div id="progress-bar" style="background: #409EFF; height: 100%; width: 0%; border-radius: 10px; transition: width 0.3s;"></div>
+            </div>
+        </div>
+        <div id="log2" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试3：导出汇总统计</h2>
+        <p>测试导出订单统计数据</p>
+        <button onclick="testSummaryExport()">导出汇总统计</button>
+        <div id="log3" class="log"></div>
+    </div>
+
+    <script>
+        // 生成测试数据
+        function generateTestOrders(count) {
+            const orders = [];
+            const statuses = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
+            const customers = ['张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十'];
+            const products = [
+                { name: '美白面膜', price: 99 },
+                { name: '玻尿酸精华', price: 199 },
+                { name: '防晒霜', price: 129 },
+                { name: '洁面乳', price: 69 },
+                { name: '爽肤水', price: 89 },
+                { name: '面霜', price: 159 },
+                { name: '眼霜', price: 239 },
+                { name: '精华液', price: 299 }
+            ];
+
+            for (let i = 0; i < count; i++) {
+                const customer = customers[Math.floor(Math.random() * customers.length)];
+                const product = products[Math.floor(Math.random() * products.length)];
+                const quantity = Math.floor(Math.random() * 5) + 1;
+                const status = statuses[Math.floor(Math.random() * statuses.length)];
+                const createTime = new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000);
+
+                orders.push({
+                    id: i + 1,
+                    orderNo: `ORD${String(i + 1).padStart(8, '0')}`,
+                    customerName: customer,
+                    customerPhone: `1${Math.floor(Math.random() * 9) + 3}${String(Math.floor(Math.random() * 100000000)).padStart(9, '0')}`,
+                    productName: product.name,
+                    quantity: quantity,
+                    unitPrice: product.price,
+                    totalAmount: product.price * quantity,
+                    status: status,
+                    createTime: createTime.toISOString().slice(0, 19).replace('T', ' '),
+                    updateTime: createTime.toISOString().slice(0, 19).replace('T', ' ')
+                });
+            }
+
+            return orders;
+        }
+
+        // 状态文本映射
+        function getStatusText(status) {
+            const textMap = {
+                'pending': '待付款',
+                'paid': '已付款',
+                'shipped': '已发货',
+                'completed': '已完成',
+                'cancelled': '已取消'
+            };
+            return textMap[status] || status;
+        }
+
+        // 格式化日期
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // 导出Excel文件
+        function exportOrdersToExcel(orders, filename = '订单列表') {
+            const excelData = orders.map((order, index) => ({
+                '序号': index + 1,
+                '订单号': order.orderNo,
+                '客户姓名': order.customerName,
+                '客户电话': order.customerPhone,
+                '商品名称': order.productName,
+                '数量': order.quantity,
+                '单价': order.unitPrice,
+                '总金额': order.totalAmount,
+                '订单状态': getStatusText(order.status),
+                '创建时间': order.createTime,
+                '更新时间': order.updateTime
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            
+            // 设置列宽
+            ws['!cols'] = [
+                { wch: 8 }, { wch: 18 }, { wch: 12 }, { wch: 15 },
+                { wch: 20 }, { wch: 8 }, { wch: 10 }, { wch: 12 },
+                { wch: 10 }, { wch: 20 }, { wch: 20 }
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, '订单列表');
+            const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, `${filename}_${formatDate(new Date())}.xlsx`);
+        }
+
+        // 导出ZIP压缩包
+        async function exportOrdersToZip(orders, filename = '订单列表导出', batchSize = 1000, onProgress) {
+            const zip = new JSZip();
+            const totalOrders = orders.length;
+            const batchCount = Math.ceil(totalOrders / batchSize);
+            
+            // 创建README文件
+            const readmeContent = `订单数据导出统计
+==================
+
+导出时间: ${new Date().toISOString().slice(0, 19).replace('T', ' ')}
+总订单数: ${totalOrders.toLocaleString()} 条
+文件数量: ${batchCount} 个Excel文件
+每文件记录数: 最多 ${batchSize.toLocaleString()} 条
+
+文件说明:
+${Array.from({ length: batchCount }, (_, i) => {
+    const start = i * batchSize + 1;
+    const end = Math.min((i + 1) * batchSize, totalOrders);
+    return `- 订单列表_第${i + 1}批.xlsx: 第 ${start.toLocaleString()}-${end.toLocaleString()} 条记录 (共 ${(end - start + 1).toLocaleString()} 条)`;
+}).join('\n')}`;
+            
+            zip.file('README.txt', readmeContent);
+            
+            // 分批处理数据
+            for (let i = 0; i < batchCount; i++) {
+                const start = i * batchSize;
+                const end = Math.min(start + batchSize, totalOrders);
+                const batchOrders = orders.slice(start, end);
+                
+                const excelData = batchOrders.map((order, index) => ({
+                    '序号': start + index + 1,
+                    '订单号': order.orderNo,
+                    '客户姓名': order.customerName,
+                    '客户电话': order.customerPhone,
+                    '商品名称': order.productName,
+                    '数量': order.quantity,
+                    '单价': order.unitPrice,
+                    '总金额': order.totalAmount,
+                    '订单状态': getStatusText(order.status),
+                    '创建时间': order.createTime,
+                    '更新时间': order.updateTime
+                }));
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(excelData);
+                ws['!cols'] = [
+                    { wch: 8 }, { wch: 18 }, { wch: 12 }, { wch: 15 },
+                    { wch: 20 }, { wch: 8 }, { wch: 10 }, { wch: 12 },
+                    { wch: 10 }, { wch: 20 }, { wch: 20 }
+                ];
+
+                XLSX.utils.book_append_sheet(wb, ws, '订单列表');
+                const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                
+                const batchFilename = `订单列表_第${i + 1}批_${start + 1}-${end}.xlsx`;
+                zip.file(batchFilename, excelBuffer);
+                
+                // 更新进度
+                if (onProgress) {
+                    const progress = Math.round(((i + 1) / batchCount) * 100);
+                    onProgress(progress, `正在处理第 ${i + 1} 批数据...`);
+                }
+                
+                // 添加延迟避免界面阻塞
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            // 生成ZIP文件
+            if (onProgress) onProgress(95, '正在生成压缩文件...');
+            const zipBlob = await zip.generateAsync({
+                type: 'blob',
+                compression: 'DEFLATE',
+                compressionOptions: { level: 6 }
+            });
+            
+            if (onProgress) onProgress(100, '导出完成');
+            saveAs(zipBlob, `${filename}_${formatDate(new Date())}.zip`);
+        }
+
+        // 记录日志
+        function log(elementId, message) {
+            const logElement = document.getElementById(elementId);
+            const time = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${time}] ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        // 测试1：小数据量导出
+        function testSmallExport() {
+            log('log1', '开始生成100条测试数据...');
+            const orders = generateTestOrders(100);
+            log('log1', `生成完成，共 ${orders.length} 条数据`);
+            
+            log('log1', '开始导出Excel文件...');
+            try {
+                exportOrdersToExcel(orders, '测试订单列表_小数据量');
+                log('log1', '导出成功！请检查下载的Excel文件');
+            } catch (error) {
+                log('log1', `导出失败：${error.message}`);
+            }
+        }
+
+        // 测试2：大数据量导出
+        async function testLargeExport() {
+            log('log2', '开始生成6000条测试数据...');
+            const orders = generateTestOrders(6000);
+            log('log2', `生成完成，共 ${orders.length} 条数据`);
+            
+            document.getElementById('progress2').style.display = 'block';
+            
+            log('log2', '开始分批导出并压缩...');
+            try {
+                await exportOrdersToZip(orders, '测试订单列表_大数据量', 1000, (progress, status) => {
+                    document.getElementById('progress-text').textContent = `${progress}%`;
+                    document.getElementById('progress-bar').style.width = `${progress}%`;
+                    log('log2', status);
+                });
+                log('log2', '导出成功！请检查下载的ZIP文件');
+            } catch (error) {
+                log('log2', `导出失败：${error.message}`);
+            }
+        }
+
+        // 测试3：汇总统计导出
+        function testSummaryExport() {
+            log('log3', '开始生成500条测试数据...');
+            const orders = generateTestOrders(500);
+            log('log3', `生成完成，共 ${orders.length} 条数据`);
+            
+            log('log3', '开始生成汇总统计...');
+            try {
+                // 按状态统计
+                const statusStats = {};
+                orders.forEach(order => {
+                    const status = getStatusText(order.status);
+                    if (!statusStats[status]) {
+                        statusStats[status] = { count: 0, amount: 0 };
+                    }
+                    statusStats[status].count++;
+                    statusStats[status].amount += order.totalAmount;
+                });
+                
+                const statusData = Object.entries(statusStats).map(([status, stats]) => ({
+                    '订单状态': status,
+                    '订单数量': stats.count,
+                    '总金额': stats.amount.toFixed(2),
+                    '平均金额': (stats.amount / stats.count).toFixed(2)
+                }));
+                
+                // 按商品统计
+                const productStats = {};
+                orders.forEach(order => {
+                    if (!productStats[order.productName]) {
+                        productStats[order.productName] = { count: 0, quantity: 0, amount: 0 };
+                    }
+                    productStats[order.productName].count++;
+                    productStats[order.productName].quantity += order.quantity;
+                    productStats[order.productName].amount += order.totalAmount;
+                });
+                
+                const productData = Object.entries(productStats)
+                    .map(([product, stats]) => ({
+                        '商品名称': product,
+                        '订单数量': stats.count,
+                        '销售数量': stats.quantity,
+                        '销售金额': stats.amount.toFixed(2),
+                        '平均单价': (stats.amount / stats.quantity).toFixed(2)
+                    }))
+                    .sort((a, b) => parseFloat(b['销售金额']) - parseFloat(a['销售金额']));
+                
+                // 创建汇总统计Excel
+                const wb = XLSX.utils.book_new();
+                
+                const statusWs = XLSX.utils.json_to_sheet(statusData);
+                statusWs['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 }];
+                XLSX.utils.book_append_sheet(wb, statusWs, '按状态统计');
+                
+                const productWs = XLSX.utils.json_to_sheet(productData);
+                productWs['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 }];
+                XLSX.utils.book_append_sheet(wb, productWs, '按商品统计');
+                
+                const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                saveAs(blob, `订单汇总统计_${formatDate(new Date())}.xlsx`);
+                
+                log('log3', '汇总统计导出成功！请检查下载的Excel文件');
+                log('log3', `统计结果：${Object.keys(statusStats).length} 种状态，${Object.keys(productStats).length} 种商品`);
+            } catch (error) {
+                log('log3', `导出失败：${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
